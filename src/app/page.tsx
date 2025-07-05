@@ -2,186 +2,252 @@
 
 import { useState } from 'react';
 import Image from "next/image";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+
+// Optional: For icon usage (you'd need to install a library like react-icons)
+// import { FiCopy, FiGlobe, FiTarget } from 'react-icons/fi';
+
+// Define a type for your blog data for better type safety
+interface GeneratedBlogData {
+  title: string;
+  metaDescription: string;
+  body: string;
+}
 
 export default function Home() {
   const [urls, setUrls] = useState({
     yourWebsite: '',
     competitorWebsite: '',
   });
+  const [productNames, setProductNames] = useState({
+    userProduct: '',
+    competitorProduct: '',
+  });
   const [loading, setLoading] = useState(false);
-  const [generatedBlog, setGeneratedBlog] = useState('');
+  const [generatedBlogData, setGeneratedBlogData] = useState<GeneratedBlogData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
+    setGeneratedBlogData(null);
+    setCopied(false);
+
     try {
+      const { userProduct: userProductName, competitorProduct: competitorName } = productNames;
+
       const response = await fetch('/api/generate-blog', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(urls),
+        body: JSON.stringify({
+          ...urls,
+          userProductName,
+          competitorName,
+        }),
       });
-      const data = await response.json();
-      setGeneratedBlog(data.blog);
-    } catch (error) {
-      console.error('Error generating blog:', error);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+
+      const data: GeneratedBlogData = await response.json();
+      setGeneratedBlogData(data);
+
+    } catch (err: any) {
+      console.error('Error generating blog:', err);
+      setError(err.message || 'Failed to generate blog post. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleCopy = () => {
+    if (generatedBlogData?.body) {
+      navigator.clipboard.writeText(`${generatedBlogData.title}\n\n${generatedBlogData.metaDescription}\n\n${generatedBlogData.body}`)
+        .then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        })
+        .catch(err => {
+          console.error('Failed to copy text: ', err);
+          setError('Failed to copy text.');
+        });
+    }
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="min-h-screen flex flex-col items-center justify-between p-4 sm:p-8 bg-gray-950 text-gray-50">
+      <header className="w-full flex justify-between items-center py-4">
+        {/* Updated App Header Title Color to match logo's deep blue/teal */}
+        <h1 className="text-2xl font-bold text-blue-600">Piggyback</h1>
+      </header>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+      <main className="flex flex-col items-center w-full max-w-4xl px-4 py-8 bg-gray-800 rounded-lg shadow-xl mb-auto mt-8">
+        <h2 className="text-4xl font-extrabold text-white mb-8 text-center">
+          Ride Their Wave
+        </h2>
+
+        {/* Input Form */}
+        <form onSubmit={handleSubmit} className="space-y-6 w-full max-w-md">
+          {/* Input Fields - Focus Ring Color Updated */}
+          <div>
+            <label htmlFor="userProduct" className="block text-sm font-medium text-gray-300 mb-2">
+              Your Product Name
+            </label>
+            <input
+              type="text"
+              id="userProduct"
+              value={productNames.userProduct}
+              onChange={(e) => setProductNames({ ...productNames, userProduct: e.target.value })}
+              className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 text-white text-base"
+              placeholder="e.g., Apollo.io"
+              required
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          </div>
+
+          <div>
+            <label htmlFor="competitorProduct" className="block text-sm font-medium text-gray-300 mb-2">
+              Competitor Product Name
+            </label>
+            <input
+              type="text"
+              id="competitorProduct"
+              value={productNames.competitorProduct}
+              onChange={(e) => setProductNames({ ...productNames, competitorProduct: e.target.value })}
+              className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 text-white text-base"
+              placeholder="e.g., Seamless AI"
+              required
+            />
+          </div>
+
+          <div>
+            <label htmlFor="yourWebsite" className="block text-sm font-medium text-gray-300 mb-2">
+              Your Website URL
+            </label>
+            <input
+              type="url"
+              id="yourWebsite"
+              value={urls.yourWebsite}
+              onChange={(e) => setUrls({ ...urls, yourWebsite: e.target.value })}
+              className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 text-white text-base"
+              placeholder="e.g., https://yourproduct.com"
+              required
+            />
+          </div>
+
+          <div>
+            <label htmlFor="competitorWebsite" className="block text-sm font-medium text-gray-300 mb-2">
+              Competitor Website URL
+            </label>
+            <input
+              type="url"
+              id="competitorWebsite"
+              value={urls.competitorWebsite}
+              onChange={(e) => setUrls({ ...urls, competitorWebsite: e.target.value })}
+              className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 text-white text-base"
+              placeholder="e.g., https://competitor.com/platform-overview"
+              required
+            />
+          </div>
+
+          {/* Generate Button - Color Updated */}
+          <button
+            type="submit"
+            disabled={loading}
+            className={`w-full py-3 px-4 rounded-md text-lg font-semibold transition-all duration-300
+              ${loading
+                ? 'bg-blue-800 text-blue-200 cursor-not-allowed flex items-center justify-center'
+                : 'bg-blue-600 hover:bg-blue-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 focus:ring-offset-gray-800' // Focus ring matches button
+              }`}
           >
-            Read our docs
-          </a>
-        </div>
+            {loading ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Generating...
+              </>
+            ) : (
+              'Generate Blog Post'
+            )}
+          </button>
+        </form>
 
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl font-bold text-gray-900 mb-8">
-            AI Blog Generator
-          </h1>
-          
-          <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow-md">
-            <div>
-              <label htmlFor="yourWebsite" className="block text-sm font-medium text-gray-700">
-                Your Website URL
-              </label>
-              <input
-                type="url"
-                id="yourWebsite"
-                value={urls.yourWebsite}
-                onChange={(e) => setUrls({ ...urls, yourWebsite: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                required
-              />
+        {/* Display Errors */}
+        {error && (
+          <div className="mt-8 p-4 bg-red-800 border border-red-700 text-red-100 rounded-lg w-full max-w-md text-center">
+            <p className="font-bold">Error:</p>
+            <p>{error}</p>
+          </div>
+        )}
+
+        {/* Generated Blog Post Display */}
+        {generatedBlogData && (
+          <div className="mt-12 p-8 bg-gray-700 rounded-lg shadow-lg w-full text-gray-100 relative">
+            <h2 className="text-5xl font-extrabold text-white mb-8 break-words">{generatedBlogData.title}</h2>
+            {generatedBlogData.metaDescription && (
+              <p className="text-gray-300 mb-12 italic text-xl">{generatedBlogData.metaDescription}</p>
+            )}
+            <div className="prose prose-xl prose-invert max-w-none text-gray-100 leading-relaxed">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {generatedBlogData.body}
+              </ReactMarkdown>
             </div>
 
-            <div>
-              <label htmlFor="competitorWebsite" className="block text-sm font-medium text-gray-700">
-                Competitor Website URL
-              </label>
-              <input
-                type="url"
-                id="competitorWebsite"
-                value={urls.competitorWebsite}
-                onChange={(e) => setUrls({ ...urls, competitorWebsite: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                required
-              />
+            {/* Action Buttons - Colors Updated to reflect scheme */}
+            <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+              <button
+                onClick={handleCopy}
+                className={`py-3 px-6 rounded-md text-lg font-semibold transition-all duration-200 flex items-center justify-center
+                  ${copied ? 'bg-green-600 text-white' : 'bg-green-500 hover:bg-green-600 text-white'}`}
+              >
+                {copied ? 'Copied!' : 'Copy to Clipboard'}
+              </button>
+              <button
+                onClick={() => setGeneratedBlogData(null)}
+                className="py-3 px-6 rounded-md text-lg font-semibold bg-gray-600 hover:bg-gray-700 text-white transition-colors duration-200"
+              >
+                Generate New Post
+              </button>
             </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
-            >
-              {loading ? 'Generating...' : 'Generate Blog Post'}
-            </button>
-          </form>
-
-          {generatedBlog && (
-            <div className="mt-8 bg-white p-6 rounded-lg shadow-md">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Generated Blog Post</h2>
-              <div className="prose max-w-none">
-                {generatedBlog.split('\n').map((paragraph, index) => (
-                  <p key={index} className="mb-4">
-                    {paragraph}
-                  </p>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
+
+      {/* Footer */}
+      <footer className="w-full flex flex-wrap gap-6 items-center justify-center py-6 text-gray-400 text-sm">
         <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
+          className="flex items-center gap-2 hover:underline hover:underline-offset-4 text-blue-600 hover:text-blue-500" // Links more prominent
           href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
           target="_blank"
           rel="noopener noreferrer"
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
+          <Image aria-hidden src="/file.svg" alt="File icon" width={16} height={16} />
           Learn
         </a>
         <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
+          className="flex items-center gap-2 hover:underline hover:underline-offset-4 text-blue-600 hover:text-blue-500" // Links more prominent
           href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
           target="_blank"
           rel="noopener noreferrer"
         >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
+          <Image aria-hidden src="/window.svg" alt="Window icon" width={16} height={16} />
           Examples
         </a>
         <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
+          className="flex items-center gap-2 hover:underline hover:underline-offset-4 text-blue-600 hover:text-blue-500" // Links more prominent
           href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
           target="_blank"
           rel="noopener noreferrer"
         >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
+          <Image aria-hidden src="/globe.svg" alt="Globe icon" width={16} height={16} />
           Go to nextjs.org →
         </a>
       </footer>

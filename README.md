@@ -32,7 +32,7 @@ An AI-powered web application that automatically generates SEO-optimized blog po
 4. Start the development server:
 ```bash
 npm run dev
-   ```
+```
 
 5. Open [http://localhost:3000](http://localhost:3000) in your browser
 

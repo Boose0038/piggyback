@@ -101,18 +101,18 @@ export default function Home() {
       <main className="flex flex-col items-center justify-center flex-1 px-4 text-center">
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-gray-900 mb-4 leading-tight">
           Ride the Search Traffic of <br />
-          <span className="text-[#043d58]">Industry</span>
+          <span className="text-[#043d58]">Industry Giants</span>
         </h1>
         <p className="text-lg sm:text-xl text-gray-600 mb-8 max-w-2xl">
           AI-powered content generation that helps smaller SaaS companies compete by leveraging the search traffic and content strategies of established market leaders.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
           <Link href="/generator" className="px-8 py-4 bg-[#043d58] text-white rounded-lg font-semibold text-lg shadow hover:bg-[#032a3d] transition">Try Now</Link>
-          <button className="px-8 py-4 bg-white border border-gray-300 text-gray-900 rounded-lg font-semibold text-lg shadow hover:border-[#043d58] transition">Watch Demo</button>
+
         </div>
         <div className="flex gap-6 justify-center text-sm text-gray-500 mt-2">
           <span>✅ No credit card required</span>
-          <span>✅ 14-day free trial</span>
+    
         </div>
       </main>
 
